@@ -1,4 +1,5 @@
 #! python
+# coding=utf-8
 
 import argparse
 import json
@@ -10,6 +11,7 @@ import re
 
 KEY_GROUP_API = os.environ['SCOUTNET_GROUP_KEY']
 KEY_PARTICIPANT_API = os.environ['SCOUTNET_PARTICIPANT_KEY'] 
+KEY_CHECKIN_API = os.environ['SCOUTNET_CHECKIN_KEY']
 
 class DuplicateNameError(Exception):
     def __init__(self, message):
@@ -18,16 +20,21 @@ class DuplicateNameError(Exception):
 
 def get_participants():
     participants = {}
-    r = requests.get('https://183:' + KEY_PARTICIPANT_API +
-             '@www.scoutnet.se/api/project/get/participants')
+    r = requests.get('https://www.scoutnet.se/api/project/get/participants',
+                     params={'id':183, 'key':KEY_PARTICIPANT_API})
     for key,p in r.json()['participants'].items():
-            if(p['group_id'] == None and p['attended'] == True):
-                name = p['first_name'] + p['last_name']
+            if(p['group_id'] == None):
+                name = ''.join(filter(is_swedish_alpha,
+                                    p['first_name'] + p['last_name']))
                 if name in participants.keys():
-                    raise DuplicateNameError(name)
+                    pass
+                    #raise DuplicateNameError(name)
                 participants[name] = p
     return participants
 
+def is_swedish_alpha(character):
+    return(character in
+           "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖabcdefghijklmnopqrstuvwxyzåäö")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile", help="Weird csv file with volunteer dates")
@@ -41,22 +48,28 @@ with open(args.infile) as f:
     r = csv.DictReader(f, dialect='excel', delimiter=';')
     print(r.fieldnames)
     for row in r:
-        key = ''.join(filter(str.isalpha,row['Namn']))
-        ret = {'checked_in': True, 'attended': True, 'questions':{}}
-        for i in range(7,16):
-            print(str(i) + ' ' + row[str(i)+'/8'])
+        key = ''.join(filter(is_swedish_alpha,row['Namn']))
+        updates = {'questions':{}}
+        for i in range(7,17):
             if (row[str(i)+'/8']=='1'):
                 # First date question has number 800 
-                ret['questions'][str(i+799)] = 1
+                updates['questions'][str(i+793)] = {'value':'1'}
             elif (row[str(i)+'/8'] is None):
-                ret['questions'][str(i+799)] = 0
+                updates['questions'][str(i+793)] = {'value':'1'}
             elif (row[str(i)+'/8'] == 'M'):
-                ret['questions'][str(i+799)] = 1
-                ret['questions']['941'] = "20:00"
+                updates['questions'][str(i+793)] = {'value':'1'}
+                updates['questions']['941'] = {'value':"20:00"}
             elif (row[str(i)+'/8'] == 'L'):
-                ret['questions'][str(i+799)] = 1
-                ret['questions']['941'] = "14:00"
+                updates['questions'][str(i+793)] = {'value':'1'}
+                updates['questions']['941'] = {'value':"14:00"}
             elif (row[str(i)+'/8'] == 'F'):
-                ret['questions'][str(i+799)] = 1
-                ret['questions']['941'] = "10:00"
-        print(ret)
+                updates['questions'][str(i+793)] = {'value':'1'}
+                updates['questions']['941'] = {'value':"10:00"}
+        try:
+            ret = {participants[key]['member_no']:updates}
+        except KeyError:
+            print(key)
+        post = requests.post('https://www.scoutnet.se/api/project/checkin',
+                             params={'id':'183','key':KEY_CHECKIN_API},
+                             headers={'Content-Type':'application/json'},
+                             json=ret)
