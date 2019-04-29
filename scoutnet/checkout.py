@@ -1,6 +1,8 @@
 #! python
 # coding=utf-8
 
+# Uses Scoutnet's activity checkin API to update chekin details using a csv list, allowing for offline updates
+# on a field with shaky Internet connection.
 import argparse
 import json
 import requests

@@ -1,5 +1,5 @@
-<#  Takes a file with email adresses, a text file, and possibly some
-    other file(s) and emails it all using Outlook. (It's silly, I know.)
+<#  Takes a file with email adresses, a text file and emails it using 
+    Outlook. (It's silly, I know.)
 
     The text file should have the email subject on the first line, followed by 
     exactly two blank lines, and then the email body.
