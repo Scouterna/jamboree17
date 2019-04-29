@@ -1,6 +1,10 @@
 #! python
 # coding=utf-8
 
+# This program takes a specifically formatted csv file with information about when 
+# each volunteer on site wants to leave and go home, and imports that data to the 
+# registration system (https://scoutnet.se). The csv file should be provided by the 
+# HR network, or when they aren't on site by whoever wants to ask around.
 import argparse
 import json
 import requests
