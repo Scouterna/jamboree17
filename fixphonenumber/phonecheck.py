@@ -1,3 +1,6 @@
+## Filters the numbers in numbers.txt and prints the ones that are
+## valid Swedish mobile numbers on a standardized format. Useful to 
+## avoid texting landlines and foreign numbers. Maybe.
 import phonenumbers
 import os
 
